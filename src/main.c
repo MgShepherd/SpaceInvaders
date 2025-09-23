@@ -1,6 +1,6 @@
-#include "example.h"
+#include "game.h"
 
 int main() {
-  m_display_greeting();
+  m_game_init();
   return 0;
 }

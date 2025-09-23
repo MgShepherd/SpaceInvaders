@@ -1,7 +1,12 @@
 CC := clang
-CFLAGS := -Wall -Wextra -I./include
 
-C_FILES := main.c example.c
+# TODO Make these library paths configurable by the user
+LIB_DIR := /opt/homebrew
+LIBS := raylib
+
+CFLAGS := -Wall -Wextra -I./include -I$(LIB_DIR)/include -L$(LIB_DIR)/lib -l$(LIBS)
+
+C_FILES := main.c game.c
 SRC_DIR := src
 OUTPUT_DIR := build
 TARGET := $(OUTPUT_DIR)/SpaceInvaders
