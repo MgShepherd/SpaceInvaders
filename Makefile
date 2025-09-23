@@ -4,7 +4,8 @@ CC := clang
 LIB_DIR := /opt/homebrew
 LIBS := raylib
 
-CFLAGS := -Wall -Wextra -I./include -I$(LIB_DIR)/include -L$(LIB_DIR)/lib -l$(LIBS)
+CFLAGS := -Wall -Wextra -I./include -I$(LIB_DIR)/include 
+LINK_FLAGS := -L$(LIB_DIR)/lib -l$(LIBS)
 
 C_FILES := main.c game.c
 SRC_DIR := src
@@ -16,7 +17,7 @@ OBJ_FILES := $(patsubst %.c, $(OUTPUT_DIR)/%.o, $(C_FILES))
 all: $(TARGET)
 
 $(TARGET): $(OBJ_FILES)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) $(LINK_FLAGS) -o $@ $^
 
 $(OUTPUT_DIR)/%.o: $(SRC_DIR)/%.c | $(OUTPUT_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
