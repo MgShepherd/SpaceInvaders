@@ -15,8 +15,11 @@ static const int ENEMIES_PER_ROW = 10;
 static const float OBJECT_SIZE = 32.0f;
 static const float BULLET_WIDTH = 5.0f;
 static const float BULLET_HEIGHT = 15.0f;
+
 static const float PLAYER_SPEED = 300.0f;
+static const float ENEMY_SPEED = 100.0f;
 static const float BULLET_SPEED = 200.0f;
+
 static const int MAX_ENEMIES = 30;
 static const int NUM_BULLETS = 5;
 static const int IMAGE_SIZE = 16;
@@ -37,20 +40,22 @@ typedef struct {
   size_t bullet_idx;
 } M_GameState;
 
-void m_game_update_object_pos(M_GameObject *object) {
+void m_game_update_object_pos(M_GameObject *object, bool restrict_bounds) {
   object->bounds.x += object->velocity.x * GetFrameTime();
   object->bounds.y += object->velocity.y * GetFrameTime();
 
-  if (object->bounds.x < 0.0f)
-    object->bounds.x = 0.0f;
-  else if (object->bounds.x + object->bounds.width > WIDTH) {
-    object->bounds.x = WIDTH - object->bounds.width;
-  }
+  if (restrict_bounds) {
+    if (object->bounds.x < 0.0f)
+      object->bounds.x = 0.0f;
+    else if (object->bounds.x + object->bounds.width > WIDTH) {
+      object->bounds.x = WIDTH - object->bounds.width;
+    }
 
-  if (object->bounds.y < 0.0f - object->bounds.height) {
-    object->bounds.y = 0.0f - object->bounds.height;
-  } else if (object->bounds.y > HEIGHT) {
-    object->bounds.y = HEIGHT;
+    if (object->bounds.y < 0.0f - object->bounds.height) {
+      object->bounds.y = 0.0f - object->bounds.height;
+    } else if (object->bounds.y > HEIGHT) {
+      object->bounds.y = HEIGHT;
+    }
   }
 }
 
@@ -70,7 +75,16 @@ void m_game_handle_collisions(M_GameState *state) {
   }
 }
 
-void m_game_update(M_GameState *state) {
+void m_game_enemies_move_down(M_GameObject *enemies) {
+  for (size_t i = 0; i < MAX_ENEMIES; i++) {
+    if (enemies[i].alive) {
+      enemies[i].bounds.y += ENEMY_SPACING;
+      enemies[i].velocity.x *= -1;
+    }
+  }
+}
+
+void m_game_handle_movement(M_GameState *state) {
   if (IsKeyDown(KEY_A)) {
     state->player.velocity.x = -PLAYER_SPEED;
   } else if (IsKeyDown(KEY_D)) {
@@ -79,7 +93,7 @@ void m_game_update(M_GameState *state) {
     state->player.velocity.x = 0;
   }
 
-  m_game_update_object_pos(&state->player);
+  m_game_update_object_pos(&state->player, true);
   if (IsKeyPressed(KEY_SPACE) && !state->bullets[state->bullet_idx].alive) {
     state->bullets[state->bullet_idx].bounds.x =
         state->player.bounds.x + OBJECT_SIZE / 2 - BULLET_WIDTH / 2;
@@ -90,14 +104,28 @@ void m_game_update(M_GameState *state) {
     state->bullet_idx = (state->bullet_idx + 1) % NUM_BULLETS;
   }
 
+  for (size_t i = 0; i < MAX_ENEMIES; i++) {
+    if (state->enemies[i].alive) {
+      m_game_update_object_pos(&state->enemies[i], true);
+      if (state->enemies[i].bounds.x <= 0 ||
+          state->enemies[i].bounds.x >= WIDTH - OBJECT_SIZE) {
+        m_game_enemies_move_down(state->enemies);
+      }
+    }
+  }
+
   for (size_t i = 0; i < NUM_BULLETS; i++) {
     if (state->bullets[i].alive) {
-      m_game_update_object_pos(&state->bullets[i]);
+      m_game_update_object_pos(&state->bullets[i], false);
       if (state->bullets[i].bounds.y < 0) {
         state->bullets[i].alive = false;
       }
     }
   }
+}
+
+void m_game_update(M_GameState *state) {
+  m_game_handle_movement(state);
   m_game_handle_collisions(state);
 }
 
@@ -176,6 +204,7 @@ int m_game_load_objects(M_GameState *state) {
         ENEMY_START_X + ((i % ENEMIES_PER_ROW) * (OBJECT_SIZE + ENEMY_SPACING)),
         ENEMY_START_Y +
             ((int)(i / ENEMIES_PER_ROW) * (OBJECT_SIZE + ENEMY_SPACING)));
+    state->enemies[i].velocity = (Vector2){.x = -ENEMY_SPEED, .y = 0};
   }
 
   for (size_t i = 0; i < NUM_BULLETS; i++) {
