@@ -16,6 +16,7 @@ static const float OBJECT_SIZE = 32.0f;
 static const float BULLET_WIDTH = 5.0f;
 static const float BULLET_HEIGHT = 15.0f;
 static const float PLAYER_SPEED = 300.0f;
+static const float BULLET_SPEED = 200.0f;
 static const int MAX_ENEMIES = 30;
 static const int NUM_BULLETS = 5;
 static const int IMAGE_SIZE = 16;
@@ -36,12 +37,36 @@ typedef struct {
   size_t bullet_idx;
 } M_GameState;
 
-void m_game_update_player_pos(M_GameObject *player) {
-  player->bounds.x += player->velocity.x * GetFrameTime();
-  if (player->bounds.x < 0.0f)
-    player->bounds.x = 0.0f;
-  else if (player->bounds.x + player->bounds.width > WIDTH) {
-    player->bounds.x = WIDTH - player->bounds.width;
+void m_game_update_object_pos(M_GameObject *object) {
+  object->bounds.x += object->velocity.x * GetFrameTime();
+  object->bounds.y += object->velocity.y * GetFrameTime();
+
+  if (object->bounds.x < 0.0f)
+    object->bounds.x = 0.0f;
+  else if (object->bounds.x + object->bounds.width > WIDTH) {
+    object->bounds.x = WIDTH - object->bounds.width;
+  }
+
+  if (object->bounds.y < 0.0f - object->bounds.height) {
+    object->bounds.y = 0.0f - object->bounds.height;
+  } else if (object->bounds.y > HEIGHT) {
+    object->bounds.y = HEIGHT;
+  }
+}
+
+void m_game_handle_collisions(M_GameState *state) {
+  for (size_t i = 0; i < NUM_BULLETS; i++) {
+    if (state->bullets[i].alive) {
+      for (size_t j = 0; j < MAX_ENEMIES; j++) {
+        if (state->enemies[j].alive &&
+            CheckCollisionRecs(state->bullets[i].bounds,
+                               state->enemies[j].bounds)) {
+          state->enemies[j].alive = false;
+          state->bullets[i].alive = false;
+          break;
+        }
+      }
+    }
   }
 }
 
@@ -54,21 +79,34 @@ void m_game_update(M_GameState *state) {
     state->player.velocity.x = 0;
   }
 
-  m_game_update_player_pos(&state->player);
+  m_game_update_object_pos(&state->player);
   if (IsKeyPressed(KEY_SPACE) && !state->bullets[state->bullet_idx].alive) {
     state->bullets[state->bullet_idx].bounds.x =
         state->player.bounds.x + OBJECT_SIZE / 2 - BULLET_WIDTH / 2;
     state->bullets[state->bullet_idx].bounds.y =
         state->player.bounds.y + OBJECT_SIZE / 2 - BULLET_HEIGHT / 2;
     state->bullets[state->bullet_idx].alive = true;
+    state->bullets[state->bullet_idx].velocity.y = -BULLET_SPEED;
     state->bullet_idx = (state->bullet_idx + 1) % NUM_BULLETS;
   }
+
+  for (size_t i = 0; i < NUM_BULLETS; i++) {
+    if (state->bullets[i].alive) {
+      m_game_update_object_pos(&state->bullets[i]);
+      if (state->bullets[i].bounds.y < 0) {
+        state->bullets[i].alive = false;
+      }
+    }
+  }
+  m_game_handle_collisions(state);
 }
 
 static inline void m_game_draw_object(Texture2D *sprite_sheet,
                                       const M_GameObject *object) {
-  DrawTexturePro(*sprite_sheet, object->image_region, object->bounds,
-                 (Vector2){.x = 0.0f, .y = 0.0f}, 0.0f, WHITE);
+  if (object->alive) {
+    DrawTexturePro(*sprite_sheet, object->image_region, object->bounds,
+                   (Vector2){.x = 0.0f, .y = 0.0f}, 0.0f, WHITE);
+  }
 }
 
 void m_game_render(Texture2D *sprite_sheet, M_GameState *state) {
