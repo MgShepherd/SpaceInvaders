@@ -1,6 +1,9 @@
 #ifndef _GAME_H_
 #define _GAME_H_
 
-void m_game_run();
+int m_game_init();
+int m_game_update();
+int m_game_render();
+void m_game_destroy();
 
 #endif // _GAME_H_

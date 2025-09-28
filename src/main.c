@@ -1,6 +1,6 @@
-#include "game.h"
+#include "state.h"
 
 int main() {
-  m_game_run();
+  m_app_run();
   return 0;
 }
