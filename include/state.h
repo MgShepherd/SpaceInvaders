@@ -2,8 +2,8 @@
 #define _M_STATE_H_
 
 typedef enum {
-  MENU,
-  GAME
+  M_MENU,
+  M_GAME
 } M_State;
 
 void m_app_run();
