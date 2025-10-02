@@ -7,7 +7,7 @@ LIBS := raylib
 CFLAGS := -Wall -Wextra -I./include -I$(LIB_DIR)/include 
 LINK_FLAGS := -L$(LIB_DIR)/lib -l$(LIBS)
 
-C_FILES := main.c game.c state.c menu.c
+C_FILES := main.c game.c state.c menu.c constants.c
 SRC_DIR := src
 OUTPUT_DIR := build
 TARGET := $(OUTPUT_DIR)/SpaceInvaders

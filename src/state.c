@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 static M_State current_state = M_MENU;
+static bool should_close = false;
 
 int init();
 int update();
@@ -17,11 +18,12 @@ void m_app_run() {
   SetConfigFlags(FLAG_VSYNC_HINT);
 
   if (init() != 0) return;
-  while (!WindowShouldClose()) {
+  while (!WindowShouldClose() && !should_close) {
     if (update() != 0) break;
     if (render() != 0) break;
   }
   destroy();
+  CloseWindow();
 }
 
 void m_app_state_change(M_State new_state) {
@@ -29,6 +31,10 @@ void m_app_state_change(M_State new_state) {
   destroy();
   current_state = new_state;
   init();
+}
+
+void m_app_close() {
+  should_close = true;
 }
 
 int init() {

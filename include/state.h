@@ -9,5 +9,6 @@ typedef enum {
 void m_app_run();
 
 void m_app_state_change(M_State new_state);
+void m_app_close();
 
 #endif // _M_STATE_H_
